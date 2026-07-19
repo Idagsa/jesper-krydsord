@@ -12,7 +12,7 @@
     font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
     max-width: 700px;
     margin: 0 auto;
-    padding: 8px 6px 40px;
+    padding: 8px 0 40px;
     color: #111;
     background: #fff;
   }
@@ -21,7 +21,19 @@
     font-weight: 700;
     font-size: 22px;
     text-align: center;
-    margin: 4px 0 8px;
+    margin: 4px 6px 8px;
+  }
+  #xw-intro {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: #333;
+    text-align: center;
+    margin: 0 10px 16px;
+    padding: 12px 14px;
+    background: #fdf6ec;
+    border: 1px solid #eadfc9;
+    border-radius: 8px;
   }
   #xw-clue-bar {
     display: flex;
@@ -32,7 +44,7 @@
     border: 1px solid #ccc;
     border-radius: 6px;
     padding: 8px 10px;
-    margin-bottom: 8px;
+    margin: 0 6px 8px;
     font-size: 14px;
     min-height: 20px;
   }
@@ -105,7 +117,7 @@
     display: flex;
     gap: 8px;
     justify-content: center;
-    margin-bottom: 14px;
+    margin: 0 6px 14px;
   }
   #xw-tools button {
     border: 1px solid #999;
@@ -118,14 +130,14 @@
     font-family: Georgia, serif;
     font-weight: 700;
     font-size: 16px;
-    margin: 14px 0 6px;
+    margin: 14px 6px 6px;
     border-bottom: 2px solid #111;
     padding-bottom: 2px;
   }
-  .xw-clue-list { font-size: 13px; line-height: 1.5; }
+  .xw-clue-list { font-size: 13px; line-height: 1.5; margin: 0 6px; }
   .xw-clue-item { padding: 3px 4px; border-radius: 4px; cursor: pointer; }
   .xw-clue-item:active, .xw-clue-item.xw-clue-active { background: var(--nyt-blue); }
-  #xw-reveal-section { margin-top: 22px; }
+  #xw-reveal-section { margin: 22px 6px 0; }
   #xw-reveal-boxes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; }
   .xw-reveal-word { display: flex; gap: 3px; }
   .xw-reveal-box {
@@ -150,6 +162,22 @@
     color: #b5590a;
     animation: xw-pop 0.6s ease;
   }
+  #xw-reveal-link {
+    display: none;
+    text-align: center;
+    margin-top: 14px;
+  }
+  #xw-reveal-link a {
+    display: inline-block;
+    background: #b5590a;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 10px 20px;
+    border-radius: 30px;
+    animation: xw-pop 0.6s ease;
+  }
   @keyframes xw-pop {
     0% { transform: scale(0.7); opacity: 0; }
     60% { transform: scale(1.08); opacity: 1; }
@@ -166,6 +194,7 @@
 
 <div id="xw-root">
   <div id="xw-title">Tillykke med fødselsdagen!!</div>
+  <div id="xw-intro">Stort tillykke med de 24 år! Tiden vi har delt indtil nu betyder utrolig meget for mig, og jeg kan slet ikke vente på alt det, der venter forude. Der findes faktisk en fødselsdagsgave til dig et sted, men den har gemt sig bag dette krydsord om vores fælles historie. Så find frem til svarene, hvis du vil have fingrene i den.</div>
   <div id="xw-clue-bar">
     <div id="xw-clue-nav"><button id="xw-prev">&larr;</button></div>
     <div id="xw-clue-text">Tryk på et felt for at starte</div>
@@ -182,6 +211,9 @@
     <div class="xw-section-title">Din gave</div>
     <div id="xw-reveal-boxes"></div>
     <div id="xw-reveal-msg"></div>
+    <div id="xw-reveal-link">
+      <a href="https://www.noegen.dk/norreport/" target="_blank" rel="noopener">Book bord hos Nögen 🍽️</a>
+    </div>
   </div>
 </div>
 <canvas id="xw-confetti"></canvas>
@@ -232,7 +264,13 @@ const PUZZLE = {"nrows": 22, "ncols": 27, "cells": {"16,6": {"letter": "S", "num
   let activeR = null, activeC = null, activeDir = null; // 'A' or 'D'
 
   const gridEl = document.getElementById('xw-grid');
-  const cellSize = Math.min(24, Math.max(20, Math.floor((Math.min(window.innerWidth, 700) - 20) / 15)));
+  const gridWrapEl = document.getElementById('xw-grid-wrap');
+
+  function computeCellSize() {
+    const w = gridWrapEl.clientWidth || Math.min(window.innerWidth, 700);
+    return Math.max(12, Math.floor(w / ncols));
+  }
+  let cellSize = computeCellSize();
   gridEl.style.gridTemplateColumns = `repeat(${ncols}, ${cellSize}px)`;
   gridEl.style.gridTemplateRows = `repeat(${nrows}, ${cellSize}px)`;
 
@@ -489,9 +527,11 @@ const PUZZLE = {"nrows": 22, "ncols": 27, "cells": {"16,6": {"letter": "S", "num
       }
     }
     const msgEl = document.getElementById('xw-reveal-msg');
+    const linkEl = document.getElementById('xw-reveal-link');
     if (allCorrect) {
       msgEl.textContent = "🎉 Tillykke med de 24 år - løsningen er din gave! 🎉";
       msgEl.classList.add('xw-celebrate');
+      linkEl.style.display = 'block';
       if (!celebrated) {
         celebrated = true;
         launchConfetti();
@@ -499,6 +539,7 @@ const PUZZLE = {"nrows": 22, "ncols": 27, "cells": {"16,6": {"letter": "S", "num
     } else {
       msgEl.textContent = "";
       msgEl.classList.remove('xw-celebrate');
+      linkEl.style.display = 'none';
       celebrated = false;
     }
   }
@@ -542,6 +583,21 @@ const PUZZLE = {"nrows": 22, "ncols": 27, "cells": {"16,6": {"letter": "S", "num
     const ni = (idx + step + nums.length) % nums.length;
     wordListNav(nums[ni], w.dir);
   }
+
+  function applyResponsiveSizing() {
+    const newSize = computeCellSize();
+    if (newSize === cellSize) return;
+    cellSize = newSize;
+    gridEl.style.gridTemplateColumns = `repeat(${ncols}, ${cellSize}px)`;
+    gridEl.style.gridTemplateRows = `repeat(${nrows}, ${cellSize}px)`;
+    const fontSize = Math.max(10, cellSize * 0.55) + 'px';
+    for (const k in cellEls) {
+      cellEls[k].div.style.fontSize = fontSize;
+    }
+  }
+  window.addEventListener('resize', applyResponsiveSizing);
+  // Re-check a few times after load in case the embedding frame resizes late
+  [100, 350, 800, 1500].forEach(t => setTimeout(applyResponsiveSizing, t));
 
   render();
   launchConfetti();
