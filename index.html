@@ -1,0 +1,549 @@
+<style>
+  :root {
+    --nyt-blue: #a7d8ff;
+    --nyt-yellow: #ffe08a;
+    --nyt-msg: #fbe3c0;
+    --nyt-msg-done: #f4b955;
+    --border: #000;
+    --gray-text: #666;
+  }
+  * { box-sizing: border-box; }
+  #xw-root {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 8px 6px 40px;
+    color: #111;
+    background: #fff;
+  }
+  #xw-title {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: 22px;
+    text-align: center;
+    margin: 4px 0 8px;
+  }
+  #xw-clue-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #f2f2f2;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    min-height: 20px;
+  }
+  #xw-clue-text { flex: 1; }
+  #xw-clue-nav button {
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 14px;
+  }
+  #xw-grid-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    margin-bottom: 10px;
+    -webkit-overflow-scrolling: touch;
+  }
+  #xw-grid {
+    display: grid;
+    border: 2px solid var(--border);
+    touch-action: manipulation;
+    margin: 0 auto;
+  }
+  .xw-cell {
+    position: relative;
+    border-right: 1px solid #888;
+    border-bottom: 1px solid #888;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+  }
+  .xw-block { background: #111; border-right: 1px solid #111; border-bottom: 1px solid #111; }
+  .xw-msg { background: var(--nyt-msg); }
+  .xw-msg.xw-correct { background: var(--nyt-msg-done); }
+  .xw-in-word { background: var(--nyt-blue); }
+  .xw-msg.xw-in-word { background: #ffd9a0; }
+  .xw-active { background: var(--nyt-yellow) !important; }
+  .xw-number {
+    position: absolute;
+    top: 1px;
+    left: 2px;
+    font-size: 8px;
+    font-weight: 400;
+    color: #111;
+  }
+  .xw-msgnum {
+    position: absolute;
+    bottom: 0px;
+    right: 2px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #7a3b00;
+  }
+  #xw-hidden-input {
+    position: fixed;
+    opacity: 0;
+    height: 1px;
+    width: 1px;
+    top: 0; left: 0;
+    pointer-events: none;
+  }
+  #xw-tools {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  #xw-tools button {
+    border: 1px solid #999;
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .xw-section-title {
+    font-family: Georgia, serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin: 14px 0 6px;
+    border-bottom: 2px solid #111;
+    padding-bottom: 2px;
+  }
+  .xw-clue-list { font-size: 13px; line-height: 1.5; }
+  .xw-clue-item { padding: 3px 4px; border-radius: 4px; cursor: pointer; }
+  .xw-clue-item:active, .xw-clue-item.xw-clue-active { background: var(--nyt-blue); }
+  #xw-reveal-section { margin-top: 22px; }
+  #xw-reveal-boxes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 10px 0; }
+  .xw-reveal-word { display: flex; gap: 3px; }
+  .xw-reveal-box {
+    width: 22px; height: 26px;
+    border: 1.5px solid #333;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px;
+    text-transform: uppercase;
+    background: #fff;
+  }
+  .xw-reveal-box.xw-correct { background: var(--nyt-msg-done); border-color: #7a3b00; }
+  #xw-reveal-msg {
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    margin-top: 8px;
+  }
+  #xw-reveal-msg.xw-celebrate {
+    font-size: 18px;
+    font-weight: 700;
+    color: #b5590a;
+    animation: xw-pop 0.6s ease;
+  }
+  @keyframes xw-pop {
+    0% { transform: scale(0.7); opacity: 0; }
+    60% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  #xw-confetti {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+  }
+</style>
+
+<div id="xw-root">
+  <div id="xw-title">Tillykke med fødselsdagen!!</div>
+  <div id="xw-clue-bar">
+    <div id="xw-clue-nav"><button id="xw-prev">&larr;</button></div>
+    <div id="xw-clue-text">Tryk på et felt for at starte</div>
+    <div id="xw-clue-nav"><button id="xw-next">&rarr;</button></div>
+  </div>
+  <div id="xw-grid-wrap"><div id="xw-grid"></div></div>
+  <input id="xw-hidden-input" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" />
+  <div id="xw-tools">
+    <button id="xw-check">Tjek gitter</button>
+    <button id="xw-clear">Ryd alt</button>
+  </div>
+
+  <div id="xw-reveal-section">
+    <div class="xw-section-title">Din gave</div>
+    <div id="xw-reveal-boxes"></div>
+    <div id="xw-reveal-msg"></div>
+  </div>
+</div>
+<canvas id="xw-confetti"></canvas>
+
+<script>
+const PUZZLE = {"nrows": 22, "ncols": 27, "cells": {"16,6": {"letter": "S", "number": 30, "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "16,7": {"letter": "T", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,8": {"letter": "R", "msg": 3, "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 26, "clue": "Din side af sengen", "length": 5}}, "16,9": {"letter": "Y", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,10": {"letter": "G", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,11": {"letter": "E", "msg": 25, "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "16,12": {"letter": "R", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,13": {"letter": "K", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "16,14": {"letter": "V", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,15": {"letter": "A", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,16": {"letter": "R", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "16,17": {"letter": "T", "number": 31, "msg": 5, "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}, "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "16,18": {"letter": "E", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "16,19": {"letter": "T", "across": {"num": 30, "clue": "En demonstration forhindrede os i at høre en", "length": 14}}, "11,11": {"letter": "L", "number": 24, "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "12,11": {"letter": "A", "msg": 16, "across": {"num": 25, "clue": "Måned vi blev kærester", "length": 3}, "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "13,11": {"letter": "N", "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "14,11": {"letter": "C", "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "15,11": {"letter": "I", "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "17,11": {"letter": "R", "down": {"num": 24, "clue": "Vi har danset", "length": 7}}, "13,8": {"letter": "H", "number": 26, "down": {"num": 26, "clue": "Din side af sengen", "length": 5}}, "14,8": {"letter": "Ø", "down": {"num": 26, "clue": "Din side af sengen", "length": 5}}, "15,8": {"letter": "J", "down": {"num": 26, "clue": "Din side af sengen", "length": 5}}, "17,8": {"letter": "E", "down": {"num": 26, "clue": "Din side af sengen", "length": 5}}, "6,16": {"letter": "B", "number": 12, "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "7,16": {"letter": "E", "msg": 13, "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}, "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "8,16": {"letter": "Z", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "9,16": {"letter": "Z", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "10,16": {"letter": "E", "across": {"num": 21, "clue": "Du er ... år", "length": 10}, "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "11,16": {"letter": "R", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "12,16": {"letter": "W", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "13,16": {"letter": "I", "across": {"num": 27, "clue": "Ord du bruger når du fortæller om mad du har lavet til mig", "length": 2}, "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "14,16": {"letter": "Z", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "15,16": {"letter": "E", "down": {"num": 12, "clue": "Vi er bedre end min mor og Ejnar til det", "length": 11}}, "14,13": {"letter": "S", "number": 29, "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "15,13": {"letter": "O", "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "17,13": {"letter": "K", "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "18,13": {"letter": "E", "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "19,13": {"letter": "R", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}, "down": {"num": 29, "clue": "Gave fra Schweiz", "length": 6}}, "7,9": {"letter": "K", "number": 15, "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}, "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "7,10": {"letter": "Ø", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}}, "7,11": {"letter": "D", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}, "down": {"num": 9, "clue": "Min hårfarve (ifølge dig)", "length": 3}}, "7,12": {"letter": "B", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}}, "7,13": {"letter": "O", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}}, "7,14": {"letter": "L", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}, "down": {"num": 8, "clue": "Farven på blomsterne du gav mig fra Belgien", "length": 5}}, "7,15": {"letter": "L", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}}, "7,17": {"letter": "R", "across": {"num": 15, "clue": "I Ikea spiste vi", "length": 9}}, "11,6": {"letter": "R", "number": 23, "msg": 18, "across": {"num": 22, "clue": "Serie vi har set sammen", "length": 5}, "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "12,6": {"letter": "I", "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "13,6": {"letter": "C", "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "14,6": {"letter": "C", "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "15,6": {"letter": "O", "down": {"num": 23, "clue": "Farlig café", "length": 6}}, "17,17": {"letter": "O", "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "18,17": {"letter": "L", "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "19,17": {"letter": "V", "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "20,17": {"letter": "T", "msg": 21, "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}, "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "21,17": {"letter": "E", "down": {"num": 31, "clue": "Dato du blev bachelor", "length": 6}}, "11,4": {"letter": "K", "number": 22, "across": {"num": 22, "clue": "Serie vi har set sammen", "length": 5}, "down": {"num": 16, "clue": "Tal der indgår i bogserie kun du har læst", "length": 4}}, "11,5": {"letter": "O", "across": {"num": 22, "clue": "Serie vi har set sammen", "length": 5}}, "11,7": {"letter": "R", "across": {"num": 22, "clue": "Serie vi har set sammen", "length": 5}, "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "11,8": {"letter": "A", "across": {"num": 22, "clue": "Serie vi har set sammen", "length": 5}}, "10,13": {"letter": "F", "number": 21, "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,14": {"letter": "I", "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,15": {"letter": "R", "msg": 12, "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,17": {"letter": "O", "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,18": {"letter": "G", "msg": 24, "across": {"num": 21, "clue": "Du er ... år", "length": 10}, "down": {"num": 17, "clue": "Til morgenmad spiser du (næsten) altid to", "length": 2}}, "10,19": {"letter": "T", "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,20": {"letter": "Y", "across": {"num": 21, "clue": "Du er ... år", "length": 10}, "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "10,21": {"letter": "V", "across": {"num": 21, "clue": "Du er ... år", "length": 10}}, "10,22": {"letter": "E", "across": {"num": 21, "clue": "Du er ... år", "length": 10}, "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "9,18": {"letter": "Æ", "number": 17, "down": {"num": 17, "clue": "Til morgenmad spiser du (næsten) altid to", "length": 2}}, "5,11": {"letter": "R", "number": 9, "down": {"num": 9, "clue": "Min hårfarve (ifølge dig)", "length": 3}}, "6,11": {"letter": "Ø", "msg": 23, "down": {"num": 9, "clue": "Min hårfarve (ifølge dig)", "length": 3}}, "19,4": {"letter": "F", "number": 35, "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,5": {"letter": "I", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,6": {"letter": "S", "number": 36, "msg": 14, "across": {"num": 35, "clue": "God midnatssnack", "length": 11}, "down": {"num": 36, "clue": "Jeg synes du er...", "length": 3}}, "19,7": {"letter": "K", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,8": {"letter": "E", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,9": {"letter": "F", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,10": {"letter": "I", "msg": 6, "across": {"num": 35, "clue": "God midnatssnack", "length": 11}, "down": {"num": 32, "clue": "Destination for vores første rejse", "length": 4}}, "19,11": {"letter": "N", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,12": {"letter": "G", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "19,14": {"letter": "E", "across": {"num": 35, "clue": "God midnatssnack", "length": 11}}, "2,9": {"letter": "L", "number": 3, "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "3,9": {"letter": "A", "across": {"num": 6, "clue": "Din yndlings is", "length": 6}, "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "4,9": {"letter": "D", "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "5,9": {"letter": "C", "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "6,9": {"letter": "Y", "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "8,9": {"letter": "E", "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "9,9": {"letter": "L", "down": {"num": 3, "clue": "Til sommer skal vi køre mere", "length": 8}}, "20,6": {"letter": "Ø", "down": {"num": 36, "clue": "Jeg synes du er...", "length": 3}}, "21,6": {"letter": "D", "msg": 4, "across": {"num": 38, "clue": "Dit yndlings LinkedIn spil", "length": 4}, "down": {"num": 36, "clue": "Jeg synes du er...", "length": 3}}, "20,15": {"letter": "A", "number": 37, "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}}, "20,16": {"letter": "F", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}}, "20,18": {"letter": "E", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}}, "20,19": {"letter": "R", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}, "down": {"num": 33, "clue": "Du har lige fået klippet ...", "length": 3}}, "20,20": {"letter": "S", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}}, "20,21": {"letter": "K", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}, "down": {"num": 34, "clue": "Forkortelse for museum vi har været på", "length": 3}}, "20,22": {"letter": "I", "across": {"num": 37, "clue": "DTU fest hvor vi mødtes igen", "length": 8}}, "21,3": {"letter": "W", "number": 38, "across": {"num": 38, "clue": "Dit yndlings LinkedIn spil", "length": 4}}, "21,4": {"letter": "E", "across": {"num": 38, "clue": "Dit yndlings LinkedIn spil", "length": 4}}, "21,5": {"letter": "N", "across": {"num": 38, "clue": "Dit yndlings LinkedIn spil", "length": 4}}, "12,10": {"letter": "M", "number": 25, "across": {"num": 25, "clue": "Måned vi blev kærester", "length": 3}}, "12,12": {"letter": "J", "across": {"num": 25, "clue": "Måned vi blev kærester", "length": 3}}, "6,7": {"letter": "B", "number": 11, "msg": 1, "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "7,7": {"letter": "O", "msg": 2, "across": {"num": 14, "clue": "I Odense gennemførte du (næsten selv) en", "length": 4}, "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "8,7": {"letter": "M", "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "9,7": {"letter": "B", "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "10,7": {"letter": "E", "down": {"num": 11, "clue": "Det der gik galt efter middag med Anton og Mathias", "length": 6}}, "13,15": {"letter": "V", "number": 27, "across": {"num": 27, "clue": "Ord du bruger når du fortæller om mad du har lavet til mig", "length": 2}}, "18,19": {"letter": "H", "number": 33, "down": {"num": 33, "clue": "Du har lige fået klippet ...", "length": 3}}, "19,19": {"letter": "Å", "msg": 11, "down": {"num": 33, "clue": "Du har lige fået klippet ...", "length": 3}}, "9,4": {"letter": "S", "number": 16, "down": {"num": 16, "clue": "Tal der indgår i bogserie kun du har læst", "length": 4}}, "10,4": {"letter": "E", "across": {"num": 20, "clue": "Aktivitet på vores første date", "length": 5}, "down": {"num": 16, "clue": "Tal der indgår i bogserie kun du har læst", "length": 4}}, "12,4": {"letter": "S", "down": {"num": 16, "clue": "Tal der indgår i bogserie kun du har læst", "length": 4}}, "18,21": {"letter": "S", "number": 34, "down": {"num": 34, "clue": "Forkortelse for museum vi har været på", "length": 3}}, "19,21": {"letter": "M", "down": {"num": 34, "clue": "Forkortelse for museum vi har været på", "length": 3}}, "3,8": {"letter": "M", "number": 6, "across": {"num": 6, "clue": "Din yndlings is", "length": 6}}, "3,10": {"letter": "G", "across": {"num": 6, "clue": "Din yndlings is", "length": 6}}, "3,11": {"letter": "N", "across": {"num": 6, "clue": "Din yndlings is", "length": 6}}, "3,12": {"letter": "U", "across": {"num": 6, "clue": "Din yndlings is", "length": 6}, "down": {"num": 2, "clue": "Første del af navnet på kollegiet vi begge har boet på", "length": 4}}, "3,13": {"letter": "M", "across": {"num": 6, "clue": "Din yndlings is", "length": 6}}, "7,4": {"letter": "D", "number": 14, "across": {"num": 14, "clue": "I Odense gennemførte du (næsten selv) en", "length": 4}}, "7,5": {"letter": "A", "msg": 19, "across": {"num": 14, "clue": "I Odense gennemførte du (næsten selv) en", "length": 4}, "down": {"num": 5, "clue": "Fornavn på kvindelig kunstner, tema på papvinen til 15kr", "length": 5}}, "7,6": {"letter": "T", "across": {"num": 14, "clue": "I Odense gennemførte du (næsten selv) en", "length": 4}}, "3,5": {"letter": "F", "number": 5, "down": {"num": 5, "clue": "Fornavn på kvindelig kunstner, tema på papvinen til 15kr", "length": 5}}, "4,5": {"letter": "R", "across": {"num": 7, "clue": "Din yndlings farve", "length": 4}, "down": {"num": 5, "clue": "Fornavn på kvindelig kunstner, tema på papvinen til 15kr", "length": 5}}, "5,5": {"letter": "I", "down": {"num": 5, "clue": "Fornavn på kvindelig kunstner, tema på papvinen til 15kr", "length": 5}}, "6,5": {"letter": "D", "down": {"num": 5, "clue": "Fornavn på kvindelig kunstner, tema på papvinen til 15kr", "length": 5}}, "4,4": {"letter": "G", "number": 7, "across": {"num": 7, "clue": "Din yndlings farve", "length": 4}}, "4,6": {"letter": "Ø", "across": {"num": 7, "clue": "Din yndlings farve", "length": 4}}, "4,7": {"letter": "N", "msg": 20, "across": {"num": 7, "clue": "Din yndlings farve", "length": 4}}, "18,10": {"letter": "W", "number": 32, "down": {"num": 32, "clue": "Destination for vores første rejse", "length": 4}}, "20,10": {"letter": "E", "down": {"num": 32, "clue": "Destination for vores første rejse", "length": 4}}, "21,10": {"letter": "N", "down": {"num": 32, "clue": "Destination for vores første rejse", "length": 4}}, "0,22": {"letter": "P", "number": 1, "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "1,22": {"letter": "U", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "2,22": {"letter": "T", "msg": 15, "across": {"num": 4, "clue": "Forkortelse for universitet vi går på", "length": 3}, "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "3,22": {"letter": "T", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "4,22": {"letter": "E", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "5,22": {"letter": "M", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "6,22": {"letter": "O", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}, "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "7,22": {"letter": "N", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "8,22": {"letter": "S", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "9,22": {"letter": "T", "number": 19, "msg": 8, "across": {"num": 19, "clue": "Efter klokken 21 er du", "length": 4}, "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "11,22": {"letter": "R", "down": {"num": 1, "clue": "Du kalder mig blandt andet", "length": 12}}, "9,20": {"letter": "L", "number": 18, "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "11,20": {"letter": "N", "msg": 22, "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "12,20": {"letter": "G", "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "13,20": {"letter": "B", "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}, "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "14,20": {"letter": "Y", "down": {"num": 18, "clue": "Hvor bor du?", "length": 6}}, "10,0": {"letter": "K", "number": 20, "across": {"num": 20, "clue": "Aktivitet på vores første date", "length": 5}, "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "10,1": {"letter": "Æ", "across": {"num": 20, "clue": "Aktivitet på vores første date", "length": 5}}, "10,2": {"letter": "L", "msg": 7, "across": {"num": 20, "clue": "Aktivitet på vores første date", "length": 5}, "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "10,3": {"letter": "K", "across": {"num": 20, "clue": "Aktivitet på vores første date", "length": 5}}, "13,18": {"letter": "F", "number": 28, "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "13,19": {"letter": "E", "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "13,21": {"letter": "R", "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "13,22": {"letter": "U", "msg": 17, "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "13,23": {"letter": "A", "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "13,24": {"letter": "R", "across": {"num": 28, "clue": "Måned for vores første date", "length": 7}}, "2,21": {"letter": "D", "number": 4, "across": {"num": 4, "clue": "Forkortelse for universitet vi går på", "length": 3}}, "2,23": {"letter": "U", "across": {"num": 4, "clue": "Forkortelse for universitet vi går på", "length": 3}}, "4,14": {"letter": "L", "number": 8, "down": {"num": 8, "clue": "Farven på blomsterne du gav mig fra Belgien", "length": 5}}, "5,14": {"letter": "I", "down": {"num": 8, "clue": "Farven på blomsterne du gav mig fra Belgien", "length": 5}}, "6,14": {"letter": "L", "down": {"num": 8, "clue": "Farven på blomsterne du gav mig fra Belgien", "length": 5}}, "8,14": {"letter": "A", "down": {"num": 8, "clue": "Farven på blomsterne du gav mig fra Belgien", "length": 5}}, "11,0": {"letter": "R", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "12,0": {"letter": "Y", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "13,0": {"letter": "D", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "14,0": {"letter": "S", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "15,0": {"letter": "O", "msg": 9, "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "16,0": {"letter": "R", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "17,0": {"letter": "D", "down": {"num": 20, "clue": "Du er (blandt andet) god til", "length": 8}}, "9,23": {"letter": "R", "across": {"num": 19, "clue": "Efter klokken 21 er du", "length": 4}}, "9,24": {"letter": "Æ", "across": {"num": 19, "clue": "Efter klokken 21 er du", "length": 4}}, "9,25": {"letter": "T", "across": {"num": 19, "clue": "Efter klokken 21 er du", "length": 4}}, "6,2": {"letter": "R", "number": 10, "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "7,2": {"letter": "A", "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "8,2": {"letter": "M", "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "9,2": {"letter": "S", "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "11,2": {"letter": "Ø", "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "12,2": {"letter": "G", "down": {"num": 10, "clue": "Vi ledte efter ... i dyrehaven", "length": 7}}, "6,18": {"letter": "N", "number": 13, "msg": 26, "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,19": {"letter": "Y", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,20": {"letter": "B", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,21": {"letter": "R", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,23": {"letter": "G", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,24": {"letter": "Å", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,25": {"letter": "R", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "6,26": {"letter": "D", "across": {"num": 13, "clue": "Kollegie hvor vi mødte hinanden", "length": 9}}, "1,12": {"letter": "P", "number": 2, "msg": 10, "down": {"num": 2, "clue": "Første del af navnet på kollegiet vi begge har boet på", "length": 4}}, "2,12": {"letter": "O", "down": {"num": 2, "clue": "Første del af navnet på kollegiet vi begge har boet på", "length": 4}}, "4,12": {"letter": "L", "down": {"num": 2, "clue": "Første del af navnet på kollegiet vi begge har boet på", "length": 4}}}};
+
+(function() {
+  const P = PUZZLE;
+  const nrows = P.nrows, ncols = P.ncols;
+  const cells = P.cells; // key "r,c" -> {letter, number?, msg?, across?, down?}
+
+  // build 2D lookup + word registries
+  const cellAt = {};
+  for (const key in cells) {
+    cellAt[key] = cells[key];
+  }
+  function key(r,c){ return r+","+c; }
+  function exists(r,c){ return cellAt.hasOwnProperty(key(r,c)); }
+
+  // build word -> ordered cell list, for across and down
+  const acrossWords = {}; // num -> {clue, length, cells:[[r,c],...]}
+  const downWords = {};
+  for (const k in cellAt) {
+    const [r,c] = k.split(",").map(Number);
+    const cell = cellAt[k];
+    if (cell.across) {
+      const num = cell.across.num;
+      if (!acrossWords[num]) acrossWords[num] = {clue: cell.across.clue, length: cell.across.length, cells: []};
+    }
+    if (cell.down) {
+      const num = cell.down.num;
+      if (!downWords[num]) downWords[num] = {clue: cell.down.clue, length: cell.down.length, cells: []};
+    }
+  }
+  // populate cell lists by scanning grid in reading order per word start; simpler: derive by scanning each row/col
+  for (const k in cellAt) {
+    const [r,c] = k.split(",").map(Number);
+    const cell = cellAt[k];
+    if (cell.across) acrossWords[cell.across.num].cells.push([r,c]);
+    if (cell.down) downWords[cell.down.num].cells.push([r,c]);
+  }
+  for (const num in acrossWords) acrossWords[num].cells.sort((a,b)=>a[1]-b[1]);
+  for (const num in downWords) downWords[num].cells.sort((a,b)=>a[0]-b[0]);
+
+  // state
+  const state = {}; // key -> typed letter
+  let activeR = null, activeC = null, activeDir = null; // 'A' or 'D'
+
+  const gridEl = document.getElementById('xw-grid');
+  const cellSize = Math.min(24, Math.max(20, Math.floor((Math.min(window.innerWidth, 700) - 20) / 15)));
+  gridEl.style.gridTemplateColumns = `repeat(${ncols}, ${cellSize}px)`;
+  gridEl.style.gridTemplateRows = `repeat(${nrows}, ${cellSize}px)`;
+
+  const cellEls = {};
+  for (let r = 0; r < nrows; r++) {
+    for (let c = 0; c < ncols; c++) {
+      const div = document.createElement('div');
+      const k = key(r,c);
+      if (!exists(r,c)) {
+        div.className = 'xw-cell xw-block';
+      } else {
+        div.className = 'xw-cell';
+        div.style.fontSize = Math.max(10, cellSize*0.55) + 'px';
+        const cell = cellAt[k];
+        if (cell.msg) div.classList.add('xw-msg');
+        if (cell.msg) {
+          const mn = document.createElement('div');
+          mn.className = 'xw-msgnum';
+          mn.textContent = cell.msg;
+          div.appendChild(mn);
+        } else if (cell.number) {
+          const num = document.createElement('div');
+          num.className = 'xw-number';
+          num.textContent = cell.number;
+          div.appendChild(num);
+        }
+        const letterSpan = document.createElement('span');
+        letterSpan.className = 'xw-letter';
+        div.appendChild(letterSpan);
+        div.addEventListener('click', () => selectCell(r,c));
+        cellEls[k] = { div, letterSpan };
+      }
+      gridEl.appendChild(div);
+    }
+  }
+
+  const hiddenInput = document.getElementById('xw-hidden-input');
+  const clueTextEl = document.getElementById('xw-clue-text');
+
+  function currentWord() {
+    const k = key(activeR, activeC);
+    const cell = cellAt[k];
+    if (!cell) return null;
+    if (activeDir === 'A' && cell.across) return {dir:'A', num:cell.across.num, ...acrossWords[cell.across.num]};
+    if (activeDir === 'D' && cell.down) return {dir:'D', num:cell.down.num, ...downWords[cell.down.num]};
+    return null;
+  }
+
+  function selectCell(r, c, forceDir) {
+    const cell = cellAt[key(r,c)];
+    if (!cell) return;
+    if (activeR === r && activeC === c && !forceDir) {
+      // toggle direction if both exist
+      if (cell.across && cell.down) {
+        activeDir = (activeDir === 'A') ? 'D' : 'A';
+      }
+    } else {
+      activeR = r; activeC = c;
+      if (forceDir) { activeDir = forceDir; }
+      else if (cell.across) activeDir = 'A';
+      else if (cell.down) activeDir = 'D';
+    }
+    if (activeDir === 'A' && !cell.across) activeDir = cell.down ? 'D' : null;
+    if (activeDir === 'D' && !cell.down) activeDir = cell.across ? 'A' : null;
+    render();
+    hiddenInput.value = '';
+    hiddenInput.focus();
+  }
+
+  function moveTo(r,c, dir) {
+    if (!exists(r,c)) return false;
+    activeR = r; activeC = c;
+    if (dir) activeDir = dir;
+    render();
+    return true;
+  }
+
+  function nextCellInWord(step) {
+    const w = currentWord();
+    if (!w) return;
+    const idx = w.cells.findIndex(([r,c]) => r===activeR && c===activeC);
+    const ni = idx + step;
+    if (ni >= 0 && ni < w.cells.length) {
+      activeR = w.cells[ni][0]; activeC = w.cells[ni][1];
+    }
+  }
+
+  hiddenInput.addEventListener('input', (e) => {
+    const val = hiddenInput.value;
+    if (!val) return;
+    const ch = val[val.length-1].toUpperCase();
+    if (/[A-ZÆØÅ]/.test(ch)) {
+      state[key(activeR,activeC)] = ch;
+      nextCellInWord(1);
+      render();
+    }
+    hiddenInput.value = '';
+  });
+
+  hiddenInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const k = key(activeR,activeC);
+      if (state[k]) {
+        delete state[k];
+        render();
+      } else {
+        nextCellInWord(-1);
+        render();
+      }
+    } else if (e.key === 'ArrowRight') { e.preventDefault(); moveTo(activeR, activeC+1, 'A'); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); moveTo(activeR, activeC-1, 'A'); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); moveTo(activeR+1, activeC, 'D'); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); moveTo(activeR-1, activeC, 'D'); }
+  });
+
+  document.getElementById('xw-check').addEventListener('click', () => {
+    for (const k in cellEls) {
+      const cell = cellAt[k];
+      const el = cellEls[k].div;
+      if (state[k]) {
+        if (state[k] === cell.letter) {
+          el.style.color = '#1a7a1a';
+        } else {
+          el.style.color = '#c0392b';
+        }
+      }
+    }
+  });
+  document.getElementById('xw-clear').addEventListener('click', () => {
+    if (!confirm('Ryd alle udfyldte felter?')) return;
+    for (const k in state) delete state[k];
+    render();
+  });
+
+  function wordListNav(num, dir) {
+    const w = (dir==='A'?acrossWords:downWords)[num];
+    if (!w) return;
+    selectCell(w.cells[0][0], w.cells[0][1], dir);
+  }
+
+  function buildClueLists() {
+    // no-op: standalone clue lists removed, clues appear in the clue bar instead
+  }
+  buildClueLists();
+
+  // reveal section
+  const MESSAGE_WORDS = [["BORD",4],["TIL",3],["TO",2],["PÅ",2],["RESTAURANT",10],["NØGEN",5]];
+  // map msg index (1-26) -> cell key
+  const msgCellByIndex = {};
+  for (const k in cellAt) {
+    const cell = cellAt[k];
+    if (cell.msg) msgCellByIndex[cell.msg] = k;
+  }
+  const revealBoxesEl = document.getElementById('xw-reveal-boxes');
+  const boxRefs = {}; // msgIndex -> element
+  let counter = 1;
+  MESSAGE_WORDS.forEach(([w, n]) => {
+    const wordDiv = document.createElement('div');
+    wordDiv.className = 'xw-reveal-word';
+    for (let i=0;i<n;i++) {
+      const box = document.createElement('div');
+      box.className = 'xw-reveal-box';
+      wordDiv.appendChild(box);
+      boxRefs[counter] = box;
+      counter++;
+    }
+    revealBoxesEl.appendChild(wordDiv);
+  });
+
+  // ---------- confetti celebration ----------
+  const confettiCanvas = document.getElementById('xw-confetti');
+  const ctx = confettiCanvas.getContext('2d');
+  let confettiParticles = [];
+  let confettiRunning = false;
+  let celebrated = false;
+
+  function resizeConfetti() {
+    confettiCanvas.width = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeConfetti);
+  resizeConfetti();
+
+  const CONFETTI_COLORS = ['#f4b955','#e0724a','#7abf7a','#5a9bd6','#c76fb0','#f2d94e'];
+
+  function launchConfetti() {
+    confettiParticles = [];
+    const count = 140;
+    for (let i = 0; i < count; i++) {
+      confettiParticles.push({
+        x: Math.random() * confettiCanvas.width,
+        y: -20 - Math.random() * confettiCanvas.height * 0.5,
+        w: 6 + Math.random() * 5,
+        h: 8 + Math.random() * 6,
+        color: CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)],
+        rot: Math.random() * Math.PI,
+        vRot: (Math.random() - 0.5) * 0.3,
+        vy: 2 + Math.random() * 3,
+        vx: (Math.random() - 0.5) * 2,
+        life: 0
+      });
+    }
+    if (!confettiRunning) {
+      confettiRunning = true;
+      requestAnimationFrame(confettiStep);
+    }
+    setTimeout(() => { confettiRunning = false; }, 4500);
+  }
+
+  function confettiStep() {
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    let anyAlive = false;
+    confettiParticles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vRot;
+      p.life += 1;
+      if (p.y < confettiCanvas.height + 20) anyAlive = true;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    if (confettiRunning && anyAlive) {
+      requestAnimationFrame(confettiStep);
+    } else {
+      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiRunning = false;
+    }
+  }
+
+  function updateReveal() {
+    let allCorrect = true;
+    for (let i=1;i<=26;i++) {
+      const ck = msgCellByIndex[i];
+      const cell = cellAt[ck];
+      const typed = state[ck];
+      const box = boxRefs[i];
+      if (typed) {
+        box.textContent = typed;
+        if (typed === cell.letter) {
+          box.classList.add('xw-correct');
+        } else {
+          box.classList.remove('xw-correct');
+          allCorrect = false;
+        }
+      } else {
+        box.textContent = '';
+        box.classList.remove('xw-correct');
+        allCorrect = false;
+      }
+    }
+    const msgEl = document.getElementById('xw-reveal-msg');
+    if (allCorrect) {
+      msgEl.textContent = "🎉 Tillykke med de 24 år - løsningen er din gave! 🎉";
+      msgEl.classList.add('xw-celebrate');
+      if (!celebrated) {
+        celebrated = true;
+        launchConfetti();
+      }
+    } else {
+      msgEl.textContent = "";
+      msgEl.classList.remove('xw-celebrate');
+      celebrated = false;
+    }
+  }
+
+  function render() {
+    // clear highlight classes
+    for (const k in cellEls) {
+      cellEls[k].div.classList.remove('xw-in-word','xw-active');
+    }
+    // fill letters
+    for (const k in cellEls) {
+      cellEls[k].letterSpan.textContent = state[k] || '';
+    }
+    const w = currentWord();
+    if (w) {
+      w.cells.forEach(([r,c]) => {
+        const el = cellEls[key(r,c)];
+        if (el) el.div.classList.add('xw-in-word');
+      });
+      clueTextEl.textContent = `${w.num} ${w.dir === 'A' ? 'Vandret' : 'Lodret'}: ${w.clue}`;
+      document.querySelectorAll('.xw-clue-active').forEach(e=>e.classList.remove('xw-clue-active'));
+      const activeClueEl = document.getElementById('xw-'+(w.dir==='A'?'a':'d')+'-'+w.num);
+      if (activeClueEl) activeClueEl.classList.add('xw-clue-active');
+    } else {
+      clueTextEl.textContent = 'Tryk på et felt for at starte';
+    }
+    if (activeR !== null) {
+      const el = cellEls[key(activeR,activeC)];
+      if (el) el.div.classList.add('xw-active');
+    }
+    updateReveal();
+  }
+
+  document.getElementById('xw-prev').addEventListener('click', () => stepClue(-1));
+  document.getElementById('xw-next').addEventListener('click', () => stepClue(1));
+  function stepClue(step) {
+    const w = currentWord();
+    if (!w) return;
+    const nums = Object.keys(w.dir==='A'?acrossWords:downWords).map(Number).sort((a,b)=>a-b);
+    const idx = nums.indexOf(w.num);
+    const ni = (idx + step + nums.length) % nums.length;
+    wordListNav(nums[ni], w.dir);
+  }
+
+  render();
+  launchConfetti();
+})();
+</script>
