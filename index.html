@@ -178,6 +178,47 @@
     border-radius: 30px;
     animation: xw-pop 0.6s ease;
   }
+  #xw-game-area {
+    display: none;
+    animation: xw-pop 0.5s ease;
+  }
+  #xw-gift-stage {
+    display: block;
+    text-align: center;
+    margin: 18px 6px 22px;
+    user-select: none;
+  }
+  #xw-gift-box {
+    display: inline-block;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  #xw-gift-box:active { transform: scale(0.94); }
+  #xw-gift-hint {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #7a4a00;
+    font-weight: 600;
+  }
+  .xw-gift-bow {
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    transform-origin: 60px 34px;
+  }
+  .xw-gift-ribbon {
+    transition: opacity 0.35s ease;
+  }
+  .xw-gift-lid {
+    transition: transform 0.45s ease, opacity 0.45s ease;
+    transform-origin: 60px 46px;
+  }
+  .xw-gift-box-body {
+    transition: opacity 0.45s ease;
+  }
+  #xw-gift-box.xw-gift-tap1 .xw-gift-bow { opacity: 0; transform: scale(0.3) translateY(-14px) rotate(25deg); }
+  #xw-gift-box.xw-gift-tap2 .xw-gift-ribbon { opacity: 0; }
+  #xw-gift-box.xw-gift-tap2 .xw-gift-lid { transform: translateY(-6px) rotate(-8deg); }
+  #xw-gift-box.xw-gift-tap3 .xw-gift-lid { transform: translateY(-70px) rotate(-35deg); opacity: 0; }
+  #xw-gift-box.xw-gift-tap3 .xw-gift-box-body { opacity: 0; }
   @keyframes xw-pop {
     0% { transform: scale(0.7); opacity: 0; }
     60% { transform: scale(1.08); opacity: 1; }
@@ -195,24 +236,47 @@
 <div id="xw-root">
   <div id="xw-title">Tillykke med fødselsdagen!!</div>
   <div id="xw-intro">Stort tillykke med de 24 år! Tiden vi har delt indtil nu betyder utrolig meget for mig. Der findes faktisk en fødselsdagsgave til dig et sted, men den har gemt sig bag dette krydsord som lidt handler om dig og nogle af de ting vi har oplevet sammen. Så find frem til svarene, hvis du vil have fingrene i den.</div>
-  <div id="xw-clue-bar">
-    <div id="xw-clue-nav"><button id="xw-prev">&larr;</button></div>
-    <div id="xw-clue-text">Tryk på et felt for at starte</div>
-    <div id="xw-clue-nav"><button id="xw-next">&rarr;</button></div>
-  </div>
-  <div id="xw-grid-wrap"><div id="xw-grid"></div></div>
-  <input id="xw-hidden-input" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" />
-  <div id="xw-tools">
-    <button id="xw-check">Tjek gitter</button>
-    <button id="xw-clear">Ryd alt</button>
+
+  <div id="xw-gift-stage">
+    <div id="xw-gift-box">
+      <svg width="120" height="110" viewBox="0 0 120 110">
+        <rect class="xw-gift-box-body" x="15" y="46" width="90" height="55" rx="4" fill="#c0392b"/>
+        <rect class="xw-gift-box-body" x="15" y="46" width="90" height="55" rx="4" fill="none" stroke="#8e2317" stroke-width="2"/>
+        <rect class="xw-gift-ribbon xw-gift-box-body" x="52" y="46" width="16" height="55" fill="#f4b955"/>
+        <g class="xw-gift-lid">
+          <rect x="10" y="34" width="100" height="18" rx="4" fill="#e0724a"/>
+          <rect class="xw-gift-ribbon" x="52" y="34" width="16" height="18" fill="#f4b955"/>
+        </g>
+        <g class="xw-gift-bow">
+          <circle cx="47" cy="30" r="11" fill="#f4b955"/>
+          <circle cx="73" cy="30" r="11" fill="#f4b955"/>
+          <circle cx="60" cy="30" r="7" fill="#e0724a"/>
+        </g>
+      </svg>
+    </div>
+    <div id="xw-gift-hint">Tryk på gaven for at pakke den ud (3 tryk tilbage)</div>
   </div>
 
-  <div id="xw-reveal-section">
-    <div class="xw-section-title">Din gave</div>
-    <div id="xw-reveal-boxes"></div>
-    <div id="xw-reveal-msg"></div>
-    <div id="xw-reveal-link">
-      <a href="https://www.noegen.dk/norreport/" target="_blank" rel="noopener">Book bord hos Nögen 🍽️</a>
+  <div id="xw-game-area">
+    <div id="xw-clue-bar">
+      <div id="xw-clue-nav"><button id="xw-prev">&larr;</button></div>
+      <div id="xw-clue-text">Tryk på et felt for at starte</div>
+      <div id="xw-clue-nav"><button id="xw-next">&rarr;</button></div>
+    </div>
+    <div id="xw-grid-wrap"><div id="xw-grid"></div></div>
+    <input id="xw-hidden-input" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" />
+    <div id="xw-tools">
+      <button id="xw-check">Tjek gitter</button>
+      <button id="xw-clear">Ryd alt</button>
+    </div>
+
+    <div id="xw-reveal-section">
+      <div class="xw-section-title">Din gave</div>
+      <div id="xw-reveal-boxes"></div>
+      <div id="xw-reveal-msg"></div>
+      <div id="xw-reveal-link">
+        <a href="https://www.noegen.dk/norreport/" target="_blank" rel="noopener">Book bord hos Nögen 🍽️</a>
+      </div>
     </div>
   </div>
 </div>
@@ -446,7 +510,7 @@ const PUZZLE = {"nrows": 28, "ncols": 22, "cells": {"5,6": {"letter": "S", "numb
   const ctx = confettiCanvas.getContext('2d');
   let confettiParticles = [];
   let confettiRunning = false;
-  let celebrated = false;
+  let solvedCelebrated = false;
 
   function resizeConfetti() {
     confettiCanvas.width = window.innerWidth;
@@ -505,6 +569,37 @@ const PUZZLE = {"nrows": 28, "ncols": 22, "cells": {"5,6": {"letter": "S", "numb
     }
   }
 
+  // ---------- gift unwrap interaction (gates access to the crossword) ----------
+  const giftStageEl = document.getElementById('xw-gift-stage');
+  const giftBoxEl = document.getElementById('xw-gift-box');
+  const giftHintEl = document.getElementById('xw-gift-hint');
+  const gameAreaEl = document.getElementById('xw-game-area');
+  const GIFT_TAPS_NEEDED = 3;
+  let giftTaps = 0;
+
+  const GIFT_HINTS = [
+    "Tryk på gaven for at pakke den ud (3 tryk tilbage)",
+    "2 tryk tilbage",
+    "1 tryk tilbage"
+  ];
+
+  giftBoxEl.addEventListener('click', () => {
+    giftTaps += 1;
+    giftBoxEl.classList.add('xw-gift-tap' + giftTaps);
+    if (giftTaps < GIFT_TAPS_NEEDED) {
+      giftHintEl.textContent = GIFT_HINTS[giftTaps];
+    } else {
+      giftHintEl.textContent = "";
+      launchConfetti();
+      setTimeout(() => {
+        giftStageEl.style.display = 'none';
+        gameAreaEl.style.display = 'block';
+        applyResponsiveSizing();
+        gameAreaEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 500);
+    }
+  });
+
   function updateReveal() {
     let allCorrect = true;
     for (let i=1;i<=26;i++) {
@@ -532,15 +627,15 @@ const PUZZLE = {"nrows": 28, "ncols": 22, "cells": {"5,6": {"letter": "S", "numb
       msgEl.textContent = "🎉 Tillykke med de 24 år - løsningen er din gave! 🎉";
       msgEl.classList.add('xw-celebrate');
       linkEl.style.display = 'block';
-      if (!celebrated) {
-        celebrated = true;
+      if (!solvedCelebrated) {
+        solvedCelebrated = true;
         launchConfetti();
       }
     } else {
       msgEl.textContent = "";
       msgEl.classList.remove('xw-celebrate');
       linkEl.style.display = 'none';
-      celebrated = false;
+      solvedCelebrated = false;
     }
   }
 
@@ -600,6 +695,5 @@ const PUZZLE = {"nrows": 28, "ncols": 22, "cells": {"5,6": {"letter": "S", "numb
   [100, 350, 800, 1500].forEach(t => setTimeout(applyResponsiveSizing, t));
 
   render();
-  launchConfetti();
 })();
 </script>
